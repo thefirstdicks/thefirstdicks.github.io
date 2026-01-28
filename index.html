@@ -252,10 +252,10 @@ function placeBetGlobal(){
   const amt=Number(document.getElementById("betAmountGlobal").value);
   if(!amt || amt<=0){alert("금액 입력 필요"); return;}
   if(!checkedPlayer){alert("플레이어를 선택해주세요"); return;}
-  if(amt>myPoints){alert("포인트 부족"); return;}
+  if(amt>myPoints){alert("BGD 부족"); return;}
   myPoints -= amt;
-  document.getElementById("pointDisplay").innerText = `포인트: ${myPoints}`;
-  alert(`${checkedPlayer}에게 ${amt} 포인트 베팅 완료!`);
+  document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+  alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!`);
   document.getElementById("betAmountGlobal").value="";
   document.querySelectorAll(".checkCircle").forEach(el=>el.classList.remove("checked"));
   document.querySelectorAll(".player").forEach(card=>card.classList.remove("checked"));
