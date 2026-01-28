@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>보겜동 UX - 최신화 올인원</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b0e11;color:#eaecef;scroll-behavior:smooth;}
+
+header{
+  background:#161a1e;
+  padding:16px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:26px;
+  font-weight:700;
+  box-shadow:0 4px 14px rgba(0,0,0,0.5);
+  position:relative;
+  z-index:10;
+  cursor:pointer;
+}
+header .logo{cursor:pointer;}
+header .points{font-size:16px;font-weight:600;color:#f0b90b;}
+
+/* 컨테이너 */
+.container{max-width:1200px;margin:20px auto;padding:0 10px;display:flex;flex-direction:column;gap:8px;} 
+
+/* 경기 목록 카드 */
+.matchList{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.matchCard{
+  padding:12px 16px;
+  background:#1f2329;
+  border-radius:16px;
+  color:#f0b90b;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+}
+.matchCard:hover{background:#292d33;}
+.matchName{font-weight:600;font-size:16px;}
+.matchTime{font-size:14px;color:#eaecef;}
+
+/* 카드 영역 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;position:relative;}
+
+.player{
+  background: rgba(28,31,36,0.55);
+  backdrop-filter: blur(12px);
+  border-radius:28px;padding:14px;
+  cursor:pointer;
+  transition: height 0.2s ease, box-shadow 0.2s ease,border 0.2s ease;
+  box-shadow:0 6px 18px rgba(0,0,0,0.5);
+  position:relative;height:110px;overflow:hidden;
+  border:2px solid transparent;
+  display:flex;flex-direction:column;
+}
+.player.active{height:190px;} 
+.player.checked{border-color:#f0b90b;} 
+
+.player .topRow{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:11.45px;
+}
+.player .checkCircle{
+  width:24px;height:24px;border-radius:50%;border:2px solid #f0b90b;
+  background:rgba(0,0,0,0.3);cursor:pointer;transition:all 0.2s ease;
+}
+.player .checkCircle.checked{background:#f0b90b;transform:scale(1.2);}
+
+.player h3{font-size:16px;font-weight:600;text-align:left;margin:0;}
+.player .row{display:flex;justify-content:space-between;font-size:14px;margin-top:2px;}
+.player .odds{font-size:16px;font-weight:700;color:#f0b90b;}
+
+.detailPanel{
+  background: rgba(22,26,30,0.65);
+  backdrop-filter: blur(12px);
+  border-radius:24px;
+  padding:10px;
+  margin-top:4px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.5);
+  display:none;
+}
+
+/* 공용 베팅 영역 - 높이 맞춤 */
+#betAreaGlobal{
+  display:none; 
+  justify-content:space-between;
+  align-items:center;
+  max-width:360px;
+  margin:4px auto 0 auto;
+}
+#betAreaGlobal input,
+#betAreaGlobal button{
+  height:42px; /* 높이 맞춤 */
+  font-size:16px;
+  border-radius:18px;
+  padding:0 12px;
+  border:none;
+}
+#betAreaGlobal input{flex:1;background: rgba(28,31,36,0.6);color:#eaecef;}
+#betAreaGlobal button{background:#f0b90b;color:#000000;font-weight:700;cursor:pointer;transition:all 0.2s ease;}
+#betAreaGlobal button:hover{background:#e0a800;}
+
+@media(max-width:900px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));margin-bottom:30px;}
+  #betAreaGlobal{max-width:90%;flex-direction:row;gap:6px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="goHome()">🎲 보겜동</div>
+  <div class="points" id="pointDisplay">포인트: 1000</div>
+</header>
+
+<div class="container">
+
+  <!-- 경기 목록 -->
+  <div class="matchList" id="matchList"></div>
+
+  <!-- 카드 영역 -->
+  <div class="grid" id="players"></div>
+
+  <!-- 공용 베팅 영역 -->
+  <div id="betAreaGlobal">
+    <input type="number" id="betAmountGlobal" placeholder="베팅 포인트">
+    <button onclick="placeBetGlobal()">베팅 확정</button>
+  </div>
+</div>
+
+<script>
+// 설정
+const baseAvg=1.75, alpha=0.75, minOdds=0.6, maxOdds=3.0, k=5;
+let myPoints=1000;
+
+let playersData={
+  "Match 1":[{name:"A",scores:[],avg:0},{name:"B",scores:[],avg:0},{name:"C",scores:[],avg:0},{name:"D",scores:[],avg:0}],
+  "Match 2":[{name:"E",scores:[],avg:0},{name:"F",scores:[],avg:0},{name:"G",scores:[],avg:0},{name:"H",scores:[],avg:0}]
+};
+
+let matchesInfo=[
+  {id:"Match 1", time:"2026-01-28 18:00", players:["A","B","C","D"]},
+  {id:"Match 2", time:"2026-01-28 20:00", players:["E","F","G","H"]}
+];
+
+let currentPlayers=[];
+let checkedPlayer=null;
+let selectedMatch=null;
+
+// 평균/배당 계산
+function calcAvg(p){let n=p.scores.length;if(n===0)return baseAvg;let s=p.scores.reduce((a,b)=>a+b,0);return ((n/(n+k))*(s/n)+(k/(n+k))*baseAvg);}
+function calcOdds(avg){let o=alpha*((baseAvg/avg)-1)+1;return Math.min(maxOdds,Math.max(minOdds,o)).toFixed(2);}
+
+// 홈
+function goHome(){
+  currentPlayers=[];
+  selectedMatch=null;
+  document.getElementById("players").innerHTML="";
+  document.getElementById("betAreaGlobal").style.display="none";
+}
+
+// 경기 목록 렌더
+function renderMatchList(){
+  const container=document.getElementById("matchList");
+  container.innerHTML="";
+  matchesInfo.forEach(m=>{
+    const div=document.createElement("div"); div.className="matchCard";
+    div.innerHTML=`<div class="matchName">${m.players.join(", ")}</div><div class="matchTime">${m.time}</div>`;
+    div.onclick=()=>toggleMatch(m.id);
+    container.appendChild(div);
+  });
+}
+
+// 경기 선택 토글
+function toggleMatch(matchId){
+  if(selectedMatch===matchId){ // 같은 경기 다시 클릭 → 초기화
+    goHome();
+  }else{
+    selectedMatch=matchId;
+    currentPlayers=JSON.parse(JSON.stringify(playersData[matchId]));
+    renderPlayers();
+    document.getElementById("betAreaGlobal").style.display="flex";
+  }
+}
+
+// 카드 렌더
+function renderPlayers(){
+  const container=document.getElementById("players"); container.innerHTML="";
+  currentPlayers.forEach(p=>{
+    p.avg=calcAvg(p);
+    const odds=calcOdds(p.avg);
+    const div=document.createElement("div"); div.className="player";
+    div.innerHTML=`
+      <div class="topRow">
+        <h3>${p.name}</h3>
+        <div class="checkCircle" data-name="${p.name}" onclick="toggleCheck(event,'${p.name}')"></div>
+      </div>
+      <div class="row"><div>평균 득점</div><div>${p.avg.toFixed(2)}</div></div>
+      <div class="row"><div>배당</div><div class="odds">${odds}</div></div>
+      <div class="detailPanel" id="detail-${p.name}">
+        <div>총점: ${p.scores.reduce((a,b)=>a+b,0)}</div>
+        <div>최근 경기 기록: ${p.scores.join(", ")}</div>
+      </div>
+    `;
+    div.onclick=()=>toggleDetail(p.name);
+    container.appendChild(div);
+  });
+}
+
+// 카드 개별 확장/축소
+function toggleDetail(name){
+  const panel=document.getElementById(`detail-${name}`);
+  const card=document.querySelector(`#detail-${name}`).parentElement;
+  if(panel.style.display==="block"){
+    panel.style.display="none";
+    card.classList.remove("active");
+  }else{
+    panel.style.display="block";
+    card.classList.add("active");
+  }
+}
+
+// 체크: 한 번에 한 플레이어만 적용
+function toggleCheck(e,name){
+  e.stopPropagation();
+  const allCircles=document.querySelectorAll(".checkCircle");
+  const allCards=document.querySelectorAll(".player");
+  allCircles.forEach(c=>{
+    if(c.dataset.name!==name) c.classList.remove("checked");
+  });
+  allCards.forEach(c=>{
+    if(c.querySelector(".checkCircle").dataset.name!==name) c.classList.remove("checked");
+  });
+  const circle=e.target;
+  circle.classList.toggle("checked");
+  const card=circle.parentElement.parentElement;
+  if(circle.classList.contains("checked")){
+    card.classList.add("checked");
+    checkedPlayer=name;
+  }else{
+    card.classList.remove("checked");
+    checkedPlayer=null;
+  }
+}
+
+// 공용 베팅 적용
+function placeBetGlobal(){
+  const amt=Number(document.getElementById("betAmountGlobal").value);
+  if(!amt || amt<=0){alert("금액 입력 필요"); return;}
+  if(!checkedPlayer){alert("플레이어를 선택해주세요"); return;}
+  if(amt>myPoints){alert("포인트 부족"); return;}
+  myPoints -= amt;
+  document.getElementById("pointDisplay").innerText = `포인트: ${myPoints}`;
+  alert(`${checkedPlayer}에게 ${amt} 포인트 베팅 완료!`);
+  document.getElementById("betAmountGlobal").value="";
+  document.querySelectorAll(".checkCircle").forEach(el=>el.classList.remove("checked"));
+  document.querySelectorAll(".player").forEach(card=>card.classList.remove("checked"));
+  checkedPlayer=null;
+}
+
+// 초기 경기 목록 렌더
+renderMatchList();
+</script>
+</body>
+</html>
