@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>보겜동 UX - 최신화 올인원</title>
+<title>보겜동</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -44,7 +44,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 .matchName{font-weight:600;font-size:16px;}
 .matchTime{font-size:14px;color:#eaecef;}
 
-/* 카드 영역 */
+/* 카드 */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;position:relative;}
 
 .player{
@@ -84,7 +84,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
   display:none;
 }
 
-/* 공용 베팅 영역 - 높이 맞춤 */
+/* 베팅 영역 */
 #betAreaGlobal{
   display:none; 
   justify-content:space-between;
@@ -125,7 +125,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
   <!-- 카드 영역 -->
   <div class="grid" id="players"></div>
 
-  <!-- 공용 베팅 영역 -->
+  <!-- 베팅 영역 -->
   <div id="betAreaGlobal">
     <input type="number" id="betAmountGlobal" placeholder="베팅 포인트">
     <button onclick="placeBetGlobal()">베팅 확정</button>
@@ -224,7 +224,7 @@ function toggleDetail(name){
   }
 }
 
-// 체크: 한 번에 한 플레이어만 적용
+// 체크
 function toggleCheck(e,name){
   e.stopPropagation();
   const allCircles=document.querySelectorAll(".checkCircle");
@@ -266,4 +266,5 @@ function placeBetGlobal(){
 renderMatchList();
 </script>
 </body>
+
 </html>
