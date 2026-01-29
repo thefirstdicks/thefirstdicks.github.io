@@ -340,7 +340,8 @@ async function checkReset() {
     const serverTs = data.resetTs || "0";
     const localTs = localStorage.getItem("lastReset") || "0";
     if (serverTs !== localTs){
-      localStorage.clear();
+      localStorage.removeItem('userId');
+      localStorage.removeItem('sessionToken');
       localStorage.setItem("lastReset", serverTs);
       alert("관리자가 시스템을 초기화했습니다.\n페이지가 새로고침됩니다.");
       location.reload();
@@ -380,3 +381,4 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
