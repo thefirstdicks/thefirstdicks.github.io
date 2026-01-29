@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>보겜동</title>
+<title>🎲 보겜동</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 /* 기존 CSS 그대로 유지 */
@@ -250,9 +250,9 @@ function toggleCheck(e,name){
 // =========================
 async function placeBetGlobal(){
   const amt = Number(document.getElementById("betAmountGlobal").value);
-  if(!amt || amt<=0){ alert("금액 입력 필요"); return; }
-  if(!checkedPlayer){ alert("플레이어를 선택해주세요"); return; }
-  if(amt>myPoints){ alert("BGD 부족"); return; }
+  if(!amt || amt<=0){ alert("금액을 입력해주세요."); return; }
+  if(!checkedPlayer){ alert("플레이어를 선택해주세요."); return; }
+  if(amt>myPoints){ alert("BGD가 부족합니다."); return; }
 
   const res = await fetch(
     "https://patient-darkness-ff6b.the1stdicks.workers.dev/bet",
@@ -287,7 +287,7 @@ async function placeBetGlobal(){
 // 관리자 초기화 버튼
 // =========================
 document.getElementById("adminBtn").onclick = async () => {
-  const key = prompt("관리자 비밀번호를 입력하세요");
+  const key = prompt("관리자 비밀번호를 입력하세요.");
   if (!key) return;
 
   try {
@@ -300,16 +300,16 @@ document.getElementById("adminBtn").onclick = async () => {
     });
     const data = await res.json();
     if (res.ok && data.ok) {
-      alert("✅ 모든 BGD와 베팅 내역이 초기화되었습니다!");
+      alert("모든 플레이어의 BGD와 베팅 내역이 초기화되었습니다!");
       myPoints = 1000;
       localStorage.setItem("myBGD", myPoints);
       document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
     } else {
-      alert("❌ 관리자 인증 실패 또는 서버 오류");
+      alert("[관리자 인증 실패]");
     }
   } catch(err){
     console.error(err);
-    alert("❌ 관리자 요청 실패");
+    alert("[관리자 요청 실패]");
   }
 };
 
@@ -348,3 +348,4 @@ renderMatchList();
 </script>
 </body>
 </html>
+
