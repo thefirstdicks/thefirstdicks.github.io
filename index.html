@@ -178,9 +178,8 @@ function renderMatchList(){
 
 // 경기 선택 토글
 function toggleMatch(matchId){
-  if(selectedMatch===matchId){ // 같은 경기 다시 클릭 → 초기화
-    goHome();
-  }else{
+  if(selectedMatch===matchId){ goHome(); } 
+  else{
     selectedMatch=matchId;
     currentPlayers=JSON.parse(JSON.stringify(playersData[matchId]));
     renderPlayers();
@@ -230,22 +229,13 @@ function toggleCheck(e,name){
   e.stopPropagation();
   const allCircles=document.querySelectorAll(".checkCircle");
   const allCards=document.querySelectorAll(".player");
-  allCircles.forEach(c=>{
-    if(c.dataset.name!==name) c.classList.remove("checked");
-  });
-  allCards.forEach(c=>{
-    if(c.querySelector(".checkCircle").dataset.name!==name) c.classList.remove("checked");
-  });
+  allCircles.forEach(c=>{if(c.dataset.name!==name) c.classList.remove("checked");});
+  allCards.forEach(c=>{if(c.querySelector(".checkCircle").dataset.name!==name) c.classList.remove("checked");});
   const circle=e.target;
   circle.classList.toggle("checked");
   const card=circle.parentElement.parentElement;
-  if(circle.classList.contains("checked")){
-    card.classList.add("checked");
-    checkedPlayer=name;
-  }else{
-    card.classList.remove("checked");
-    checkedPlayer=null;
-  }
+  if(circle.classList.contains("checked")){ card.classList.add("checked"); checkedPlayer=name; } 
+  else { card.classList.remove("checked"); checkedPlayer=null; }
 }
 
 // 공용 베팅 적용
@@ -268,10 +258,7 @@ async function placeBetGlobal(){
     }
   );
 
-  if(!res.ok){
-    alert("서버 오류");
-    return;
-  }
+  if(!res.ok){ alert("서버 오류"); return; }
 
   const data = await res.json();
 
@@ -287,33 +274,38 @@ async function placeBetGlobal(){
   checkedPlayer=null;
 }
 
-// 관리자 초기화 감지
-async function checkReset(){
+// 🔴 관리자 초기화 감지
+let lastReset = localStorage.getItem("lastReset") || "0";
+
+async function checkReset() {
   try {
-    const res = await fetch(
-      "https://patient-darkness-ff6b.the1stdicks.workers.dev/reset-status"
-    );
-    if(!res.ok) return;
+    const res = await fetch("https://patient-darkness-ff6b.the1stdicks.workers.dev/reset-status");
+    if (!res.ok) return;
     const data = await res.json();
 
-    const lastReset = Number(data.resetTs || 0);
-    const myReset = Number(localStorage.getItem("myResetTs") || 0);
-
-    if(lastReset > myReset){
-      localStorage.setItem("myBGD", 1000);
-      localStorage.setItem("myResetTs", lastReset);
+    if (data.resetTs && data.resetTs !== lastReset) {
+      // BGD 초기화
       myPoints = 1000;
+      localStorage.setItem("myBGD", myPoints);
       document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
-      alert("관리자에 의해 BGD가 초기화되었습니다.");
+
+      // 마지막 RESET_TS 업데이트
+      localStorage.setItem("lastReset", data.resetTs);
+      lastReset = data.resetTs;
+
+      alert("관리자가 모든 BGD를 초기화했습니다!");
     }
-  } catch(e){
-    console.error("Reset 확인 실패", e);
+  } catch (err) {
+    console.error(err);
   }
 }
 
-// 페이지 로드 시 초기화
-renderMatchList();
+// 5초마다 초기화 감지
+setInterval(checkReset, 5000);
 checkReset();
+
+// 초기 경기 목록 렌더
+renderMatchList();
 </script>
 </body>
 </html>
