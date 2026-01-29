@@ -32,15 +32,12 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
   position:fixed;
   right:16px;
   bottom:16px;
-
   padding:14px 18px;
   border-radius:50%;
   background:#f0b90b;
   border:none;
-
   font-weight:700;
   cursor:pointer;
-
   box-shadow:0 8px 20px rgba(0,0,0,0.5);
   z-index:999;
 }
@@ -65,7 +62,9 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 .matchName{font-weight:600;font-size:16px;}
 .matchTime{font-size:14px;color:#eaecef;}
 
-/* 카드 */
+/* =========================
+   카드 영역 CSS (코드 1 기준)
+   ========================= */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;position:relative;}
 
 .player{
@@ -439,6 +438,7 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
 
 
 
