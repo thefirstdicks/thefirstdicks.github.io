@@ -4,9 +4,8 @@
 <meta charset="UTF-8">
 <title>🎲 보겜동</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- CSP 적용: 스크립트는 self만, object 차단 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none';">
 <style>
+/* 기존 CSS 그대로 유지 */
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b0e11;color:#eaecef;scroll-behavior:smooth;}
 
@@ -128,7 +127,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 <body>
 
 <header>
-  <div class="logo">🎲 보겜동</div>
+  <div class="logo" onclick="goHome()">🎲 보겜동</div>
   <div class="points" id="pointDisplay">BGD: 1000</div>
 </header>
 
@@ -145,24 +144,23 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
   <!-- 베팅 영역 -->
   <div id="betAreaGlobal">
     <input type="number" id="betAmountGlobal" placeholder="베팅 BGD">
-    <button id="betBtn">베팅 확정</button>
+    <button onclick="placeBetGlobal()">베팅 확정</button>
   </div>
 </div>
 
 <script>
-// =========================
-// XSS 방지
 function escapeHTML(str) {
   return String(str)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#39;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // =========================
 // 기존 설정/변수
+// =========================
 const baseAvg=1.75, alpha=0.75, minOdds=0.6, maxOdds=3.0, k=5;
 const API = "https://patient-darkness-ff6b.the1stdicks.workers.dev";
 
@@ -186,41 +184,31 @@ let selectedMatch=null;
 
 // =========================
 // 평균/배당 계산
-function calcAvg(p){
-  const n=p.scores.length;
-  if(n===0) return baseAvg;
-  const s=p.scores.reduce((a,b)=>a+b,0);
-  return ((n/(n+k))*(s/n)+(k/(n+k))*baseAvg);
-}
-function calcOdds(avg){
-  let o=alpha*((baseAvg/avg)-1)+1;
-  return Math.min(maxOdds,Math.max(minOdds,o)).toFixed(2);
-}
+// =========================
+function calcAvg(p){let n=p.scores.length;if(n===0)return baseAvg;let s=p.scores.reduce((a,b)=>a+b,0);return ((n/(n+k))*(s/n)+(k/(n+k))*baseAvg);}
+function calcOdds(avg){let o=alpha*((baseAvg/avg)-1)+1;return Math.min(maxOdds,Math.max(minOdds,o)).toFixed(2);}
 
 // =========================
 // 홈/리스트/카드 렌더
+// =========================
 function goHome(){
   currentPlayers=[];
   selectedMatch=null;
-  document.getElementById("players").textContent="";
+  document.getElementById("players").innerHTML="";
   document.getElementById("betAreaGlobal").style.display="none";
 }
 
 function renderMatchList(){
   const container=document.getElementById("matchList");
-  container.textContent="";
+  container.innerHTML="";
   matchesInfo.forEach(m=>{
     const div=document.createElement("div"); 
     div.className="matchCard";
-    const nameDiv = document.createElement("div");
-    nameDiv.className="matchName";
-    nameDiv.textContent = m.players.map(escapeHTML).join(", ");
-    const timeDiv = document.createElement("div");
-    timeDiv.className="matchTime";
-    timeDiv.textContent = escapeHTML(m.time);
-    div.appendChild(nameDiv);
-    div.appendChild(timeDiv);
-    div.addEventListener("click",()=>toggleMatch(m.id));
+    div.innerHTML=`
+      <div class="matchName">${m.players.map(escapeHTML).join(", ")}</div>
+      <div class="matchTime">${escapeHTML(m.time)}</div>
+    `;
+    div.onclick=()=>toggleMatch(m.id);
     container.appendChild(div);
   });
 }
@@ -237,132 +225,158 @@ function toggleMatch(matchId){
 
 function renderPlayers(){
   const container=document.getElementById("players");
-  container.textContent="";
+  container.innerHTML="";
   currentPlayers.forEach(p=>{
     p.avg=calcAvg(p);
     const odds=calcOdds(p.avg);
-
     const div=document.createElement("div");
     div.className="player";
-
-    const topRow=document.createElement("div");
-    topRow.className="topRow";
-    const h3=document.createElement("h3");
-    h3.textContent = escapeHTML(p.name);
-    const checkCircle=document.createElement("div");
-    checkCircle.className="checkCircle";
-    checkCircle.dataset.name = p.name;
-    checkCircle.addEventListener("click",(e)=>toggleCheck(e,p.name));
-    topRow.appendChild(h3);
-    topRow.appendChild(checkCircle);
-    div.appendChild(topRow);
-
-    const row1=document.createElement("div");
-    row1.className="row";
-    row1.innerHTML=`<div>평균 득점</div><div>${p.avg.toFixed(2)}</div>`;
-    const row2=document.createElement("div");
-    row2.className="row";
-    row2.innerHTML=`<div>배당</div><div class="odds">${odds}</div>`;
-    div.appendChild(row1);
-    div.appendChild(row2);
-
-    const detail=document.createElement("div");
-    detail.className="detailPanel";
-    detail.id=`detail-${p.name}`;
-    detail.innerHTML=`<div>총점: ${p.scores.reduce((a,b)=>a+b,0)}</div>
-                        <div>최근 경기 기록: ${p.scores.map(v=>escapeHTML(v)).join(", ")}</div>`;
-    div.appendChild(detail);
-
-    div.addEventListener("click",()=>toggleDetail(p.name));
+    div.innerHTML=`
+      <div class="topRow">
+        <h3>${escapeHTML(p.name)}</h3>
+        <div class="checkCircle" data-name="${escapeHTML(p.name)}" onclick="toggleCheck(event,'${escapeHTML(p.name)}')"></div>
+      </div>
+      <div class="row"><div>평균 득점</div><div>${p.avg.toFixed(2)}</div></div>
+      <div class="row"><div>배당</div><div class="odds">${odds}</div></div>
+      <div class="detailPanel" id="detail-${p.name}">
+        <div>총점: ${p.scores.reduce((a,b)=>a+b,0)}</div>
+        <div>최근 경기 기록: ${p.scores.map(v => escapeHTML(v)).join(", ")}</div>
+      </div>
+    `;
+    div.onclick=()=>toggleDetail(p.name);
     container.appendChild(div);
   });
 }
 
-// 체크 / 상세 패널
 function toggleDetail(name){
   const panel=document.getElementById(`detail-${name}`);
-  const card=panel.parentElement;
-  if(panel.style.display==="block"){ panel.style.display="none"; card.classList.remove("active"); }
-  else{ panel.style.display="block"; card.classList.add("active"); }
+  const card=document.querySelector(`#detail-${name}`).parentElement;
+  if(panel.style.display==="block"){
+    panel.style.display="none";
+    card.classList.remove("active");
+  }else{
+    panel.style.display="block";
+    card.classList.add("active");
+  }
 }
 
 function toggleCheck(e,name){
   e.stopPropagation();
-  document.querySelectorAll(".checkCircle").forEach(c=>{
-    if(c.dataset.name!==name) c.classList.remove("checked");
-  });
-  document.querySelectorAll(".player").forEach(card=>{
-    if(card.querySelector(".checkCircle").dataset.name!==name) card.classList.remove("checked");
-  });
+  const allCircles=document.querySelectorAll(".checkCircle");
+  const allCards=document.querySelectorAll(".player");
+  allCircles.forEach(c=>{if(c.dataset.name!==name) c.classList.remove("checked");});
+  allCards.forEach(c=>{if(c.querySelector(".checkCircle").dataset.name!==name) c.classList.remove("checked");});
   const circle=e.target;
   circle.classList.toggle("checked");
   const card=circle.parentElement.parentElement;
-  if(circle.classList.contains("checked")){ card.classList.add("checked"); checkedPlayer=name; }
+  if(circle.classList.contains("checked")){ card.classList.add("checked"); checkedPlayer=name; } 
   else { card.classList.remove("checked"); checkedPlayer=null; }
 }
 
 // =========================
-// 베팅 버튼
-document.getElementById("betBtn").addEventListener("click", async ()=>{
-  const amt=Number(document.getElementById("betAmountGlobal").value);
-  if(!amt || amt<=0){ alert("금액 입력"); return; }
-  if(!checkedPlayer){ alert("플레이어 선택"); return; }
-
-  try{
-    const res = await fetch(`${API}/bet`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json","X-Session-Token":sessionToken},
-      body: JSON.stringify({ matchId:selectedMatch, player:checkedPlayer, amount:amt })
-    });
-    const data=await res.json();
-    if(!res.ok){ alert(data.error||"베팅 실패"); return; }
-    myPoints=data.balance;
-    document.getElementById("pointDisplay").textContent=`BGD: ${myPoints}`;
-    alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!`);
-    document.getElementById("betAmountGlobal").value="";
-    document.querySelectorAll(".checkCircle").forEach(el=>el.classList.remove("checked"));
-    document.querySelectorAll(".player").forEach(card=>card.classList.remove("checked"));
-    checkedPlayer=null;
-  }catch(e){ console.error(e); alert("베팅 오류"); }
-});
-
+// 공용 베팅 적용
 // =========================
-// 관리자 버튼
-document.getElementById("adminBtn").addEventListener("click", async ()=>{
-  const key=prompt("관리자 비밀번호");
-  if(!key) return;
-  const mode=prompt("1: 조회  2: 초기화");
-  if(!mode) return;
-  if(mode==="1"){
-    const matchId=prompt("Match ID 입력");
-    if(!matchId) return;
-    try{
-      const res=await fetch(`${API}/admin/bets?matchId=${encodeURIComponent(matchId)}`,{
-        headers:{"X-Admin-Key":key}
-      });
-      const data=await res.json();
-      if(!res.ok){ alert("조회 실패"); return; }
-      console.table(data.bets);
-      alert("개발자도구 Console에서 확인");
-    }catch(e){ console.error(e); alert("조회 실패"); }
-  }
-  if(mode==="2"){
-    try{
-      const res=await fetch(`${API}/admin/reset`,{ method:"POST", headers:{"X-Admin-Key":key} });
-      const data=await res.json();
-      if(res.ok && data.ok) alert("초기화 완료");
-      else alert("초기화 실패");
-    }catch(e){ console.error(e); alert("초기화 실패"); }
-  }
-});
+async function placeBetGlobal(){
+  const amt = Number(document.getElementById("betAmountGlobal").value);
+  if(!amt || amt<=0){ alert("금액을 입력해주세요."); return; }
+  if(!checkedPlayer){ alert("플레이어를 선택해주세요."); return; }
 
-// =========================
-// 초기 렌더
-function init(){
-  renderMatchList();
+  const res = await fetch(`${API}/bet`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Session-Token": sessionToken },
+    body: JSON.stringify({ matchId: selectedMatch, player: checkedPlayer, amount: amt })
+  });
+
+  const data = await res.json();
+  if(!res.ok){ alert(data.error || "베팅 실패"); return; }
+
+  myPoints = data.balance;
+  document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+  alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!`);
+
+  document.getElementById("betAmountGlobal").value="";
+  document.querySelectorAll(".checkCircle").forEach(el=>el.classList.remove("checked"));
+  document.querySelectorAll(".player").forEach(card=>card.classList.remove("checked"));
+  checkedPlayer=null;
 }
 
-init();
+// =========================
+// 관리자 버튼 (조회 / 초기화 겸용)
+// =========================
+document.getElementById("adminBtn").onclick = async () => {
+  const key = prompt("관리자 비밀번호");
+  if (!key) return;
+  const mode = prompt("1: 베팅 조회\n2: 전체 초기화");
+  if (!mode) return;
+
+  if (mode === "1") {
+    const matchId = prompt("조회할 Match ID (예: Match 1)");
+    if (!matchId) return;
+    const res = await fetch(`${API}/admin/bets?matchId=${encodeURIComponent(matchId)}`, {
+      headers: { "X-Admin-Key": key }
+    });
+    const data = await res.json();
+    if (!res.ok) { alert("조회 실패"); return; }
+    console.table(data.bets);
+    alert("개발자도구(F12) → Console에서 베팅 내역 확인");
+  }
+
+  if (mode === "2") {
+    const res = await fetch(`${API}/admin/reset`, { method: "POST", headers: { "X-Admin-Key": key } });
+    const data = await res.json();
+    if (res.ok && data.ok) alert("전체 초기화 완료");
+    else alert("초기화 실패");
+  }
+};
+
+// =========================
+// 관리자 전체 초기화 감지
+// =========================
+async function checkReset() {
+  try {
+    const res = await fetch(`${API}/reset-status`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const serverTs = data.resetTs || "0";
+    const localTs = localStorage.getItem("lastReset") || "0";
+    if (serverTs !== localTs){
+      localStorage.clear();
+      localStorage.setItem("lastReset", serverTs);
+      alert("관리자가 시스템을 초기화했습니다.\n페이지가 새로고침됩니다.");
+      location.reload();
+    }
+  } catch (err) { console.error("reset check failed", err); }
+}
+setInterval(checkReset, 3000);
+checkReset();
+
+async function initSession() {
+  const res = await fetch(`${API}/session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId })
+  });
+  const data = await res.json();
+  userId = data.userId;
+  sessionToken = data.token;
+  localStorage.setItem("userId", userId);
+  localStorage.setItem("sessionToken", sessionToken);
+  await updateBalanceFromServer();
+}
+
+async function updateBalanceFromServer() {
+  const res = await fetch(`${API}/balance`, {
+    headers: { "X-Session-Token": sessionToken }
+  });
+  const data = await res.json();
+  myPoints = data.balance;
+  document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+}
+
+// =========================
+// 초기 경기 목록 렌더
+// =========================
+initSession().then(renderMatchList);
 </script>
 </body>
 </html>
