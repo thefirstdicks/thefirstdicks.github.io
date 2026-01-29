@@ -5,6 +5,7 @@
 <title>보겜동</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+/* 기존 CSS 그대로 유지 */
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b0e11;color:#eaecef;scroll-behavior:smooth;}
 
@@ -23,6 +24,10 @@ header{
 }
 header .logo{cursor:pointer;}
 header .points{font-size:16px;font-weight:600;color:#f0b90b;}
+header #adminBtn{
+  margin-left:10px;padding:4px 10px;border-radius:6px;
+  background:#f0b90b;border:none;cursor:pointer;font-weight:700;
+}
 
 /* 컨테이너 */
 .container{max-width:1200px;margin:20px auto;padding:0 10px;display:flex;flex-direction:column;gap:8px;} 
@@ -115,6 +120,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 <header>
   <div class="logo" onclick="goHome()">🎲 보겜동</div>
   <div class="points" id="pointDisplay">BGD: 1000</div>
+  <button id="adminBtn">관리자</button>
 </header>
 
 <div class="container">
@@ -133,7 +139,9 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 </div>
 
 <script>
-// 설정
+// =========================
+// 기존 설정/변수
+// =========================
 const baseAvg=1.75, alpha=0.75, minOdds=0.6, maxOdds=3.0, k=5;
 let myPoints = Number(localStorage.getItem("myBGD")) || 1000;
 document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
@@ -152,11 +160,15 @@ let currentPlayers=[];
 let checkedPlayer=null;
 let selectedMatch=null;
 
+// =========================
 // 평균/배당 계산
+// =========================
 function calcAvg(p){let n=p.scores.length;if(n===0)return baseAvg;let s=p.scores.reduce((a,b)=>a+b,0);return ((n/(n+k))*(s/n)+(k/(n+k))*baseAvg);}
 function calcOdds(avg){let o=alpha*((baseAvg/avg)-1)+1;return Math.min(maxOdds,Math.max(minOdds,o)).toFixed(2);}
 
-// 홈
+// =========================
+// 홈/리스트/카드 렌더
+// =========================
 function goHome(){
   currentPlayers=[];
   selectedMatch=null;
@@ -164,7 +176,6 @@ function goHome(){
   document.getElementById("betAreaGlobal").style.display="none";
 }
 
-// 경기 목록 렌더
 function renderMatchList(){
   const container=document.getElementById("matchList");
   container.innerHTML="";
@@ -176,7 +187,6 @@ function renderMatchList(){
   });
 }
 
-// 경기 선택 토글
 function toggleMatch(matchId){
   if(selectedMatch===matchId){ goHome(); } 
   else{
@@ -187,7 +197,6 @@ function toggleMatch(matchId){
   }
 }
 
-// 카드 렌더
 function renderPlayers(){
   const container=document.getElementById("players"); container.innerHTML="";
   currentPlayers.forEach(p=>{
@@ -211,7 +220,6 @@ function renderPlayers(){
   });
 }
 
-// 카드 개별 확장/축소
 function toggleDetail(name){
   const panel=document.getElementById(`detail-${name}`);
   const card=document.querySelector(`#detail-${name}`).parentElement;
@@ -224,7 +232,6 @@ function toggleDetail(name){
   }
 }
 
-// 체크
 function toggleCheck(e,name){
   e.stopPropagation();
   const allCircles=document.querySelectorAll(".checkCircle");
@@ -238,7 +245,9 @@ function toggleCheck(e,name){
   else { card.classList.remove("checked"); checkedPlayer=null; }
 }
 
+// =========================
 // 공용 베팅 적용
+// =========================
 async function placeBetGlobal(){
   const amt = Number(document.getElementById("betAmountGlobal").value);
   if(!amt || amt<=0){ alert("금액 입력 필요"); return; }
@@ -274,7 +283,39 @@ async function placeBetGlobal(){
   checkedPlayer=null;
 }
 
-// 🔴 관리자 초기화 감지
+// =========================
+// 관리자 초기화 버튼
+// =========================
+document.getElementById("adminBtn").onclick = async () => {
+  const key = prompt("관리자 비밀번호를 입력하세요");
+  if (!key) return;
+
+  try {
+    const res = await fetch("https://patient-darkness-ff6b.the1stdicks.workers.dev/admin/reset", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-key": key
+      }
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      alert("✅ 모든 BGD와 베팅 내역이 초기화되었습니다!");
+      myPoints = 1000;
+      localStorage.setItem("myBGD", myPoints);
+      document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+    } else {
+      alert("❌ 관리자 인증 실패 또는 서버 오류");
+    }
+  } catch(err){
+    console.error(err);
+    alert("❌ 관리자 요청 실패");
+  }
+};
+
+// =========================
+// 관리자 초기화 감지 (다른 클라이언트용)
+// =========================
 let lastReset = localStorage.getItem("lastReset") || "0";
 
 async function checkReset() {
@@ -284,27 +325,23 @@ async function checkReset() {
     const data = await res.json();
 
     if (data.resetTs && data.resetTs !== lastReset) {
-      // BGD 초기화
       myPoints = 1000;
       localStorage.setItem("myBGD", myPoints);
       document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
 
-      // 마지막 RESET_TS 업데이트
       localStorage.setItem("lastReset", data.resetTs);
       lastReset = data.resetTs;
 
       alert("관리자가 모든 BGD를 초기화했습니다!");
     }
-  } catch (err) {
-    console.error(err);
-  }
+  } catch (err) { console.error(err); }
 }
-
-// 5초마다 초기화 감지
 setInterval(checkReset, 5000);
 checkReset();
 
+// =========================
 // 초기 경기 목록 렌더
+// =========================
 renderMatchList();
 </script>
 </body>
