@@ -1,3 +1,5 @@
+아래가 코드 2야 기억해
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -9,9 +11,7 @@
 <title>🎲 보겜동</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-/* ===========================
-   코드 1 CSS (화면 구성) + 코드 2 관리자 버튼
-=========================== */
+/* 기존 CSS 그대로 유지 */
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b0e11;color:#eaecef;scroll-behavior:smooth;}
 
@@ -30,18 +30,19 @@ header{
 }
 header .logo{cursor:pointer;}
 header .points{font-size:16px;font-weight:600;color:#f0b90b;}
-
-/* 관리자 버튼 */
 #adminBtn{
   position:fixed;
   right:16px;
   bottom:16px;
+
   padding:14px 18px;
   border-radius:50%;
   background:#f0b90b;
   border:none;
+
   font-weight:700;
   cursor:pointer;
+
   box-shadow:0 8px 20px rgba(0,0,0,0.5);
   z-index:999;
 }
@@ -116,7 +117,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 }
 #betAreaGlobal input,
 #betAreaGlobal button{
-  height:42px;
+  height:42px; /* 높이 맞춤 */
   font-size:16px;
   border-radius:18px;
   padding:0 12px;
@@ -155,7 +156,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
     <button onclick="placeBetGlobal()">베팅 확정</button>
   </div>
 </div>
-      
+
 <script>
 function escapeHTML(str) {
   return String(str)
@@ -233,23 +234,22 @@ function toggleMatch(matchId){
 }
 
 function renderPlayers(){
-  const container=document.getElementById("players"); 
-  container.innerHTML="";
+  const container=document.getElementById("players"); container.innerHTML="";
   currentPlayers.forEach(p=>{
     p.avg=calcAvg(p);
     const odds=calcOdds(p.avg);
-    const div=document.createElement("div"); 
-    div.className="player";
+    const div=document.createElement("div"); div.className="player";
     div.innerHTML=`
       <div class="topRow">
         <h3>${escapeHTML(p.name)}</h3>
-        <div class="checkCircle" data-name="${escapeHTML(p.name)}" onclick="toggleCheck(event,'${escapeHTML(p.name)}')"></div>
-      </div>
+        <div class="checkCircle"
+     data-name="${escapeHTML(p.name)}"
+     onclick="toggleCheck(event,'${escapeHTML(p.name)}')"></div>
       <div class="row"><div>평균 득점</div><div>${p.avg.toFixed(2)}</div></div>
       <div class="row"><div>배당</div><div class="odds">${odds}</div></div>
       <div class="detailPanel" id="detail-${p.name}">
         <div>총점: ${p.scores.reduce((a,b)=>a+b,0)}</div>
-        <div>최근 경기 기록: ${p.scores.join(", ")}</div>
+        <div>최근 경기 기록: ${p.scores.map(v => escapeHTML(v)).join(", ")}</div>
       </div>
     `;
     div.onclick=()=>toggleDetail(p.name);
@@ -441,11 +441,3 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
