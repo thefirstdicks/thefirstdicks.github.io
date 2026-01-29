@@ -295,7 +295,7 @@ document.getElementById("adminBtn").onclick = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-admin-key": key
+        "X-Admin-Key": key
       }
     });
     const data = await res.json();
@@ -346,3 +346,4 @@ renderMatchList();
 </script>
 </body>
 </html>
+
