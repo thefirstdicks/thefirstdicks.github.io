@@ -233,22 +233,23 @@ function toggleMatch(matchId){
 }
 
 function renderPlayers(){
-  const container=document.getElementById("players"); container.innerHTML="";
+  const container=document.getElementById("players"); 
+  container.innerHTML="";
   currentPlayers.forEach(p=>{
     p.avg=calcAvg(p);
     const odds=calcOdds(p.avg);
-    const div=document.createElement("div"); div.className="player";
+    const div=document.createElement("div"); 
+    div.className="player";
     div.innerHTML=`
       <div class="topRow">
         <h3>${escapeHTML(p.name)}</h3>
-        <div class="checkCircle"
-     data-name="${escapeHTML(p.name)}"
-     onclick="toggleCheck(event,'${escapeHTML(p.name)}')"></div>
+        <div class="checkCircle" data-name="${escapeHTML(p.name)}" onclick="toggleCheck(event,'${escapeHTML(p.name)}')"></div>
+      </div>
       <div class="row"><div>평균 득점</div><div>${p.avg.toFixed(2)}</div></div>
       <div class="row"><div>배당</div><div class="odds">${odds}</div></div>
       <div class="detailPanel" id="detail-${p.name}">
         <div>총점: ${p.scores.reduce((a,b)=>a+b,0)}</div>
-        <div>최근 경기 기록: ${p.scores.map(v => escapeHTML(v)).join(", ")}</div>
+        <div>최근 경기 기록: ${p.scores.join(", ")}</div>
       </div>
     `;
     div.onclick=()=>toggleDetail(p.name);
@@ -440,6 +441,7 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
 
 
 
