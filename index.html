@@ -156,7 +156,10 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 // 기존 설정/변수
 // =========================
 const baseAvg=1.75, alpha=0.75, minOdds=0.6, maxOdds=3.0, k=5;
-let myPoints = Number(localStorage.getItem("myBGD")) || 1000;
+let myPoints =
+  localStorage.getItem("myBGD") === null
+    ? 1000
+    : Number(localStorage.getItem("myBGD"));
 document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
 
 let playersData={
@@ -361,5 +364,6 @@ renderMatchList();
 </script>
 </body>
 </html>
+
 
 
