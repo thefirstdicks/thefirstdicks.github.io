@@ -9,7 +9,9 @@
 <title>🎲 보겜동</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-/* 기존 CSS 그대로 유지 */
+/* ===========================
+   코드 1 CSS (화면 구성) + 코드 2 관리자 버튼
+=========================== */
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b0e11;color:#eaecef;scroll-behavior:smooth;}
 
@@ -28,6 +30,8 @@ header{
 }
 header .logo{cursor:pointer;}
 header .points{font-size:16px;font-weight:600;color:#f0b90b;}
+
+/* 관리자 버튼 */
 #adminBtn{
   position:fixed;
   right:16px;
@@ -62,9 +66,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 .matchName{font-weight:600;font-size:16px;}
 .matchTime{font-size:14px;color:#eaecef;}
 
-/* =========================
-   카드 영역 CSS (코드 1 기준)
-   ========================= */
+/* 카드 */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;position:relative;}
 
 .player{
@@ -114,7 +116,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 }
 #betAreaGlobal input,
 #betAreaGlobal button{
-  height:42px; /* 높이 맞춤 */
+  height:42px;
   font-size:16px;
   border-radius:18px;
   padding:0 12px;
@@ -153,7 +155,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
     <button onclick="placeBetGlobal()">베팅 확정</button>
   </div>
 </div>
-
+      
 <script>
 function escapeHTML(str) {
   return String(str)
@@ -438,6 +440,7 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
 
 
 
