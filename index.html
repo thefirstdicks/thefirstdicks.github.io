@@ -152,6 +152,15 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 </div>
 
 <script>
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // =========================
 // 기존 설정/변수
 // =========================
@@ -197,7 +206,12 @@ function renderMatchList(){
   container.innerHTML="";
   matchesInfo.forEach(m=>{
     const div=document.createElement("div"); div.className="matchCard";
-    div.innerHTML=`<div class="matchName">${m.players.join(", ")}</div><div class="matchTime">${m.time}</div>`;
+    div.innerHTML = `
+  <div class="matchName">
+    ${m.players.map(escapeHTML).join(", ")}
+  </div>
+  <div class="matchTime">${escapeHTML(m.time)}</div>
+`;
     div.onclick=()=>toggleMatch(m.id);
     container.appendChild(div);
   });
@@ -221,14 +235,15 @@ function renderPlayers(){
     const div=document.createElement("div"); div.className="player";
     div.innerHTML=`
       <div class="topRow">
-        <h3>${p.name}</h3>
-        <div class="checkCircle" data-name="${p.name}" onclick="toggleCheck(event,'${p.name}')"></div>
-      </div>
+        <h3>${escapeHTML(p.name)}</h3>
+        <div class="checkCircle"
+     data-name="${escapeHTML(p.name)}"
+     onclick="toggleCheck(event,'${escapeHTML(p.name)}')"></div>
       <div class="row"><div>평균 득점</div><div>${p.avg.toFixed(2)}</div></div>
       <div class="row"><div>배당</div><div class="odds">${odds}</div></div>
       <div class="detailPanel" id="detail-${p.name}">
         <div>총점: ${p.scores.reduce((a,b)=>a+b,0)}</div>
-        <div>최근 경기 기록: ${p.scores.join(", ")}</div>
+        <div>최근 경기 기록: ${p.scores.map(v => escapeHTML(v)).join(", ")}</div>
       </div>
     `;
     div.onclick=()=>toggleDetail(p.name);
@@ -420,6 +435,7 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
 
 
 
