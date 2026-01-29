@@ -156,11 +156,11 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 // 기존 설정/변수
 // =========================
 const baseAvg=1.75, alpha=0.75, minOdds=0.6, maxOdds=3.0, k=5;
-let myPoints =
-  localStorage.getItem("myBGD") === null
-    ? 1000
-    : Number(localStorage.getItem("myBGD"));
-document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+const API = "https://patient-darkness-ff6b.the1stdicks.workers.dev";
+
+let myPoints = 0;
+let userId = localStorage.getItem("userId");
+let sessionToken = localStorage.getItem("sessionToken");
 
 let playersData={
   "Match 1":[{name:"A",scores:[],avg:0},{name:"B",scores:[],avg:0},{name:"C",scores:[],avg:0},{name:"D",scores:[],avg:0}],
@@ -268,30 +268,31 @@ async function placeBetGlobal(){
   const amt = Number(document.getElementById("betAmountGlobal").value);
   if(!amt || amt<=0){ alert("금액을 입력해주세요."); return; }
   if(!checkedPlayer){ alert("플레이어를 선택해주세요."); return; }
-  if(amt>myPoints){ alert("BGD가 부족합니다."); return; }
 
-  const res = await fetch(
-    "https://patient-darkness-ff6b.the1stdicks.workers.dev/bet",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        matchId: selectedMatch,
-        player: checkedPlayer,
-        amount: amt
-      })
-    }
-  );
-
-  if(!res.ok){ alert("서버 오류"); return; }
+  const res = await fetch(`${API}/bet`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Session-Token": sessionToken
+    },
+    body: JSON.stringify({
+      matchId: selectedMatch,
+      player: checkedPlayer,
+      amount: amt
+    })
+  });
 
   const data = await res.json();
 
-  myPoints -= amt;
-  localStorage.setItem("myBGD", myPoints);
+  if(!res.ok){
+    alert(data.error || "베팅 실패");
+    return;
+  }
+
+  myPoints = data.balance;
   document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
 
-  alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!\n(전체 누적: ${data.total})`);
+  alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!`);
 
   document.getElementById("betAmountGlobal").value="";
   document.querySelectorAll(".checkCircle").forEach(el=>el.classList.remove("checked"));
@@ -357,10 +358,41 @@ async function checkReset() {
 setInterval(checkReset, 3000);
 checkReset();
 
+async function initSession() {
+  const res = await fetch(`${API}/session`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId })
+  });
+
+  const data = await res.json();
+
+  userId = data.userId;
+  sessionToken = data.token;
+
+  localStorage.setItem("userId", userId);
+  localStorage.setItem("sessionToken", sessionToken);
+
+  await updateBalanceFromServer();
+}
+
+async function updateBalanceFromServer() {
+  const res = await fetch(`${API}/balance`, {
+    headers: {
+      "X-Session-Token": sessionToken
+    }
+  });
+
+  const data = await res.json();
+  myPoints = data.balance;
+  document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+}
+
 // =========================
 // 초기 경기 목록 렌더
 // =========================
-renderMatchList();
+initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
