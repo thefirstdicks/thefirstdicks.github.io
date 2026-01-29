@@ -306,8 +306,15 @@ async function placeBetGlobal(){
 // 관리자 버튼 (조회 / 초기화 겸용)
 // =========================
 document.getElementById("adminBtn").onclick = async () => {
-  const key = prompt("관리자 비밀번호");
+  let key = prompt("관리자 비밀번호 (영문/숫자만)");
   if (!key) return;
+
+  // 영문/숫자 체크
+  if (!/^[a-zA-Z0-9]+$/.test(key)) {
+    alert("비밀번호는 영문과 숫자만 가능합니다.");
+    return;
+  }
+
   const mode = prompt("1: 베팅 조회\n2: 전체 초기화");
   if (!mode) return;
 
@@ -326,7 +333,8 @@ document.getElementById("adminBtn").onclick = async () => {
   if (mode === "2") {
     const res = await fetch(`${API}/admin/reset`, {
       method: "POST",
-      credentials: "include" // 서버가 관리자 여부 체크
+      credentials: "include",
+      headers: { "X-Admin-Key": key }
     });
     const data = await res.json();
     if (res.ok && data.ok) alert("전체 초기화 완료");
@@ -382,5 +390,6 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
 
 
