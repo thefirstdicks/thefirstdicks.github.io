@@ -165,8 +165,9 @@ const baseAvg=1.75, alpha=0.75, minOdds=0.6, maxOdds=3.0, k=5;
 const API = "https://patient-darkness-ff6b.the1stdicks.workers.dev";
 
 let myPoints = 0;
-let userId = localStorage.getItem("userId");
-let sessionToken = localStorage.getItem("sessionToken");
+// 더 이상 localStorage에 저장하지 않음
+let userId;       // 프론트에서는 필요 없음
+let sessionToken; // 프론트에서는 필요 없음
 
 let playersData={
   "Match 1":[{name:"A",scores:[],avg:0},{name:"B",scores:[],avg:0},{name:"C",scores:[],avg:0},{name:"D",scores:[],avg:0}],
@@ -283,7 +284,8 @@ async function placeBetGlobal(){
 
   const res = await fetch(`${API}/bet`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Session-Token": sessionToken },
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", // 쿠키 사용
     body: JSON.stringify({ matchId: selectedMatch, player: checkedPlayer, amount: amt })
   });
 
@@ -322,7 +324,10 @@ document.getElementById("adminBtn").onclick = async () => {
   }
 
   if (mode === "2") {
-    const res = await fetch(`${API}/admin/reset`, { method: "POST", headers: { "X-Admin-Key": key } });
+    const res = await fetch(`${API}/admin/reset`, {
+      method: "POST",
+      credentials: "include" // 서버가 관리자 여부 체크
+    });
     const data = await res.json();
     if (res.ok && data.ok) alert("전체 초기화 완료");
     else alert("초기화 실패");
@@ -340,9 +345,6 @@ async function checkReset() {
     const serverTs = data.resetTs || "0";
     const localTs = localStorage.getItem("lastReset") || "0";
     if (serverTs !== localTs){
-      localStorage.removeItem('userId');
-      localStorage.removeItem('sessionToken');
-      localStorage.setItem("lastReset", serverTs);
       alert("관리자가 시스템을 초기화했습니다.\n페이지가 새로고침됩니다.");
       location.reload();
     }
@@ -354,8 +356,7 @@ checkReset();
 async function initSession() {
   const res = await fetch(`${API}/session`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId })
+    credentials: "include"
   });
   const data = await res.json();
   userId = data.userId;
@@ -367,7 +368,7 @@ async function initSession() {
 
 async function updateBalanceFromServer() {
   const res = await fetch(`${API}/balance`, {
-    headers: { "X-Session-Token": sessionToken }
+    credentials: "include" // 쿠키 기반 인증
   });
   const data = await res.json();
   myPoints = data.balance;
@@ -381,4 +382,5 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
 
