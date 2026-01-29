@@ -2,10 +2,6 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy"
-      content="default-src 'self';
-               script-src 'self' 'unsafe-inline';
-               style-src 'self' 'unsafe-inline'">
 <title>🎲 보겜동</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
@@ -28,19 +24,17 @@ header{
 }
 header .logo{cursor:pointer;}
 header .points{font-size:16px;font-weight:600;color:#f0b90b;}
+
 #adminBtn{
   position:fixed;
   right:16px;
   bottom:16px;
-
   padding:14px 18px;
   border-radius:50%;
   background:#f0b90b;
   border:none;
-
   font-weight:700;
   cursor:pointer;
-
   box-shadow:0 8px 20px rgba(0,0,0,0.5);
   z-index:999;
 }
@@ -67,7 +61,6 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 
 /* 카드 */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;position:relative;}
-
 .player{
   background: rgba(28,31,36,0.55);
   backdrop-filter: blur(12px);
@@ -115,7 +108,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 }
 #betAreaGlobal input,
 #betAreaGlobal button{
-  height:42px; /* 높이 맞춤 */
+  height:42px; 
   font-size:16px;
   border-radius:18px;
   padding:0 12px;
@@ -209,13 +202,12 @@ function renderMatchList(){
   const container=document.getElementById("matchList");
   container.innerHTML="";
   matchesInfo.forEach(m=>{
-    const div=document.createElement("div"); div.className="matchCard";
-    div.innerHTML = `
-  <div class="matchName">
-    ${m.players.map(escapeHTML).join(", ")}
-  </div>
-  <div class="matchTime">${escapeHTML(m.time)}</div>
-`;
+    const div=document.createElement("div"); 
+    div.className="matchCard";
+    div.innerHTML=`
+      <div class="matchName">${m.players.map(escapeHTML).join(", ")}</div>
+      <div class="matchTime">${escapeHTML(m.time)}</div>
+    `;
     div.onclick=()=>toggleMatch(m.id);
     container.appendChild(div);
   });
@@ -232,17 +224,18 @@ function toggleMatch(matchId){
 }
 
 function renderPlayers(){
-  const container=document.getElementById("players"); container.innerHTML="";
+  const container=document.getElementById("players");
+  container.innerHTML="";
   currentPlayers.forEach(p=>{
     p.avg=calcAvg(p);
     const odds=calcOdds(p.avg);
-    const div=document.createElement("div"); div.className="player";
+    const div=document.createElement("div");
+    div.className="player";
     div.innerHTML=`
       <div class="topRow">
         <h3>${escapeHTML(p.name)}</h3>
-        <div class="checkCircle"
-     data-name="${escapeHTML(p.name)}"
-     onclick="toggleCheck(event,'${escapeHTML(p.name)}')"></div>
+        <div class="checkCircle" data-name="${escapeHTML(p.name)}" onclick="toggleCheck(event,'${escapeHTML(p.name)}')"></div>
+      </div>
       <div class="row"><div>평균 득점</div><div>${p.avg.toFixed(2)}</div></div>
       <div class="row"><div>배당</div><div class="odds">${odds}</div></div>
       <div class="detailPanel" id="detail-${p.name}">
@@ -290,27 +283,15 @@ async function placeBetGlobal(){
 
   const res = await fetch(`${API}/bet`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Session-Token": sessionToken
-    },
-    body: JSON.stringify({
-      matchId: selectedMatch,
-      player: checkedPlayer,
-      amount: amt
-    })
+    headers: { "Content-Type": "application/json", "X-Session-Token": sessionToken },
+    body: JSON.stringify({ matchId: selectedMatch, player: checkedPlayer, amount: amt })
   });
 
   const data = await res.json();
-
-  if(!res.ok){
-    alert(data.error || "베팅 실패");
-    return;
-  }
+  if(!res.ok){ alert(data.error || "베팅 실패"); return; }
 
   myPoints = data.balance;
   document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
-
   alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!`);
 
   document.getElementById("betAmountGlobal").value="";
@@ -325,80 +306,47 @@ async function placeBetGlobal(){
 document.getElementById("adminBtn").onclick = async () => {
   const key = prompt("관리자 비밀번호");
   if (!key) return;
-
   const mode = prompt("1: 베팅 조회\n2: 전체 초기화");
   if (!mode) return;
 
-  // 📊 베팅 조회
   if (mode === "1") {
     const matchId = prompt("조회할 Match ID (예: Match 1)");
     if (!matchId) return;
-
-    const res = await fetch(
-      `https://patient-darkness-ff6b.the1stdicks.workers.dev/admin/bets?matchId=${encodeURIComponent(matchId)}`,
-      {
-        headers: {
-          "X-Admin-Key": key
-        }
-      }
-    );
-
+    const res = await fetch(`${API}/admin/bets?matchId=${encodeURIComponent(matchId)}`, {
+      headers: { "X-Admin-Key": key }
+    });
     const data = await res.json();
-    if (!res.ok) {
-      alert("조회 실패");
-      return;
-    }
-
+    if (!res.ok) { alert("조회 실패"); return; }
     console.table(data.bets);
     alert("개발자도구(F12) → Console에서 베팅 내역 확인");
   }
 
-  // 🔴 전체 초기화
   if (mode === "2") {
-    const res = await fetch(
-      "https://patient-darkness-ff6b.the1stdicks.workers.dev/admin/reset",
-      {
-        method: "POST",
-        headers: {
-          "X-Admin-Key": key
-        }
-      }
-    );
-
+    const res = await fetch(`${API}/admin/reset`, { method: "POST", headers: { "X-Admin-Key": key } });
     const data = await res.json();
-    if (res.ok && data.ok) {
-      alert("전체 초기화 완료");
-    } else {
-      alert("초기화 실패");
-    }
+    if (res.ok && data.ok) alert("전체 초기화 완료");
+    else alert("초기화 실패");
   }
 };
 
 // =========================
-// 🔥 관리자 전체 초기화 감지 (완전 리셋)
+// 관리자 전체 초기화 감지
 // =========================
 async function checkReset() {
   try {
-    const res = await fetch("https://patient-darkness-ff6b.the1stdicks.workers.dev/reset-status");
+    const res = await fetch(`${API}/reset-status`);
     if (!res.ok) return;
-
     const data = await res.json();
     const serverTs = data.resetTs || "0";
     const localTs = localStorage.getItem("lastReset") || "0";
-
-    if (serverTs !== localTs) {
-      // 🔥 완전 초기화
+    if (serverTs !== localTs){
       localStorage.clear();
       localStorage.setItem("lastReset", serverTs);
-
       alert("관리자가 시스템을 초기화했습니다.\n페이지가 새로고침됩니다.");
       location.reload();
     }
-  } catch (err) {
-    console.error("reset check failed", err);
-  }
+  } catch (err) { console.error("reset check failed", err); }
 }
-
 setInterval(checkReset, 3000);
 checkReset();
 
@@ -408,25 +356,18 @@ async function initSession() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId })
   });
-
   const data = await res.json();
-
   userId = data.userId;
   sessionToken = data.token;
-
   localStorage.setItem("userId", userId);
   localStorage.setItem("sessionToken", sessionToken);
-
   await updateBalanceFromServer();
 }
 
 async function updateBalanceFromServer() {
   const res = await fetch(`${API}/balance`, {
-    headers: {
-      "X-Session-Token": sessionToken
-    }
+    headers: { "X-Session-Token": sessionToken }
   });
-
   const data = await res.json();
   myPoints = data.balance;
   document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
@@ -439,4 +380,3 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
-
