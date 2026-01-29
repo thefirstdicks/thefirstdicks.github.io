@@ -318,9 +318,7 @@ document.getElementById("adminBtn").onclick = async () => {
     const data = await res.json();
     if (res.ok && data.ok) {
       alert("모든 플레이어의 BGD와 베팅 내역이 초기화되었습니다!");
-      myPoints = 1000;
-      localStorage.setItem("myBGD", myPoints);
-      document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+      await updateBalanceFromServer();
     } else {
       alert("[관리자 인증 실패]");
     }
@@ -395,4 +393,5 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
 
