@@ -131,15 +131,20 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 
 <header>
   <div class="logo" onclick="goHome()">🎲 보겜동</div>
-  <div class="points" id="pointDisplay">BGD: --</div>
+  <div class="points" id="pointDisplay">BGD: 1000</div>
 </header>
 
 <button id="adminBtn">관리자</button>
 
 <div class="container">
+
+  <!-- 경기 목록 -->
   <div class="matchList" id="matchList"></div>
+
+  <!-- 카드 영역 -->
   <div class="grid" id="players"></div>
 
+  <!-- 베팅 영역 -->
   <div id="betAreaGlobal">
     <input type="number" id="betAmountGlobal" placeholder="베팅 BGD">
     <button onclick="placeBetGlobal()">베팅 확정</button>
@@ -148,28 +153,14 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 
 <script>
 // =========================
-// 🔧 userId (기기 공통 식별자)
-// =========================
-let userId = localStorage.getItem("userId");
-if (!userId) {
-  userId = crypto.randomUUID();
-  localStorage.setItem("userId", userId);
-}
-
-// =========================
-// 🔧 BGD 초기화 로직 수정
-// =========================
-let myPoints = Number(localStorage.getItem("myBGD"));
-if (!Number.isFinite(myPoints)) {
-  myPoints = 1000;
-  localStorage.setItem("myBGD", myPoints);
-}
-document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
-
-// =========================
-// 이하 기존 코드 그대로
+// 기존 설정/변수
 // =========================
 const baseAvg=1.75, alpha=0.75, minOdds=0.6, maxOdds=3.0, k=5;
+let myPoints =
+  localStorage.getItem("myBGD") === null
+    ? 1000
+    : Number(localStorage.getItem("myBGD"));
+document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
 
 let playersData={
   "Match 1":[{name:"A",scores:[],avg:0},{name:"B",scores:[],avg:0},{name:"C",scores:[],avg:0},{name:"D",scores:[],avg:0}],
@@ -186,13 +177,13 @@ let checkedPlayer=null;
 let selectedMatch=null;
 
 // =========================
-// 평균/배당 계산 (그대로)
+// 평균/배당 계산
 // =========================
 function calcAvg(p){let n=p.scores.length;if(n===0)return baseAvg;let s=p.scores.reduce((a,b)=>a+b,0);return ((n/(n+k))*(s/n)+(k/(n+k))*baseAvg);}
 function calcOdds(avg){let o=alpha*((baseAvg/avg)-1)+1;return Math.min(maxOdds,Math.max(minOdds,o)).toFixed(2);}
 
 // =========================
-// 홈/리스트/카드 렌더 (그대로)
+// 홈/리스트/카드 렌더
 // =========================
 function goHome(){
   currentPlayers=[];
@@ -235,63 +226,140 @@ function renderPlayers(){
       </div>
       <div class="row"><div>평균 득점</div><div>${p.avg.toFixed(2)}</div></div>
       <div class="row"><div>배당</div><div class="odds">${odds}</div></div>
+      <div class="detailPanel" id="detail-${p.name}">
+        <div>총점: ${p.scores.reduce((a,b)=>a+b,0)}</div>
+        <div>최근 경기 기록: ${p.scores.join(", ")}</div>
+      </div>
     `;
+    div.onclick=()=>toggleDetail(p.name);
     container.appendChild(div);
   });
 }
 
+function toggleDetail(name){
+  const panel=document.getElementById(`detail-${name}`);
+  const card=document.querySelector(`#detail-${name}`).parentElement;
+  if(panel.style.display==="block"){
+    panel.style.display="none";
+    card.classList.remove("active");
+  }else{
+    panel.style.display="block";
+    card.classList.add("active");
+  }
+}
+
 function toggleCheck(e,name){
   e.stopPropagation();
-  document.querySelectorAll(".checkCircle").forEach(c=>c.classList.remove("checked"));
-  e.target.classList.add("checked");
-  checkedPlayer=name;
+  const allCircles=document.querySelectorAll(".checkCircle");
+  const allCards=document.querySelectorAll(".player");
+  allCircles.forEach(c=>{if(c.dataset.name!==name) c.classList.remove("checked");});
+  allCards.forEach(c=>{if(c.querySelector(".checkCircle").dataset.name!==name) c.classList.remove("checked");});
+  const circle=e.target;
+  circle.classList.toggle("checked");
+  const card=circle.parentElement.parentElement;
+  if(circle.classList.contains("checked")){ card.classList.add("checked"); checkedPlayer=name; } 
+  else { card.classList.remove("checked"); checkedPlayer=null; }
 }
 
 // =========================
-// 🔧 베팅 (로컬 차감은 유지, 서버는 다음 단계)
+// 공용 베팅 적용
 // =========================
 async function placeBetGlobal(){
-  const amt = Number(betAmountGlobal.value);
-  if(!amt || amt<=0) return alert("금액 입력");
-  if(!checkedPlayer) return alert("선택");
-  if(amt>myPoints) return alert("BGD 부족");
+  const amt = Number(document.getElementById("betAmountGlobal").value);
+  if(!amt || amt<=0){ alert("금액을 입력해주세요."); return; }
+  if(!checkedPlayer){ alert("플레이어를 선택해주세요."); return; }
+  if(amt>myPoints){ alert("BGD가 부족합니다."); return; }
 
-  const res = await fetch("https://patient-darkness-ff6b.the1stdicks.workers.dev/bet",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      matchId:selectedMatch,
-      player:checkedPlayer,
-      amount:amt,
-      userId // 🔧 추가
-    })
-  });
+  const res = await fetch(
+    "https://patient-darkness-ff6b.the1stdicks.workers.dev/bet",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        matchId: selectedMatch,
+        player: checkedPlayer,
+        amount: amt
+      })
+    }
+  );
 
-  if(!res.ok) return alert("서버 오류");
+  if(!res.ok){ alert("서버 오류"); return; }
+
+  const data = await res.json();
 
   myPoints -= amt;
   localStorage.setItem("myBGD", myPoints);
   document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
-  alert("베팅 완료");
+
+  alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!\n(전체 누적: ${data.total})`);
+
+  document.getElementById("betAmountGlobal").value="";
+  document.querySelectorAll(".checkCircle").forEach(el=>el.classList.remove("checked"));
+  document.querySelectorAll(".player").forEach(card=>card.classList.remove("checked"));
+  checkedPlayer=null;
 }
 
 // =========================
-// 관리자 리셋 감지 (그대로)
+// 관리자 초기화 버튼
 // =========================
-async function checkReset(){
-  const res=await fetch("https://patient-darkness-ff6b.the1stdicks.workers.dev/reset-status");
-  if(!res.ok) return;
-  const data=await res.json();
-  const localTs=localStorage.getItem("lastReset")||"0";
-  if(data.resetTs!==localTs){
-    localStorage.clear();
-    localStorage.setItem("lastReset",data.resetTs);
-    location.reload();
+document.getElementById("adminBtn").onclick = async () => {
+  const key = prompt("관리자 비밀번호를 입력하세요.");
+  if (!key) return;
+
+  try {
+    const res = await fetch("https://patient-darkness-ff6b.the1stdicks.workers.dev/admin/reset", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin-Key": key
+      }
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      alert("모든 플레이어의 BGD와 베팅 내역이 초기화되었습니다!");
+      myPoints = 1000;
+      localStorage.setItem("myBGD", myPoints);
+      document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+    } else {
+      alert("[관리자 인증 실패]");
+    }
+  } catch(err){
+    console.error(err);
+    alert("[관리자 요청 실패]");
+  }
+};
+
+// =========================
+// 🔥 관리자 전체 초기화 감지 (완전 리셋)
+// =========================
+async function checkReset() {
+  try {
+    const res = await fetch("https://patient-darkness-ff6b.the1stdicks.workers.dev/reset-status");
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const serverTs = data.resetTs || "0";
+    const localTs = localStorage.getItem("lastReset") || "0";
+
+    if (serverTs !== localTs) {
+      // 🔥 완전 초기화
+      localStorage.clear();
+      localStorage.setItem("lastReset", serverTs);
+
+      alert("관리자가 시스템을 초기화했습니다.\n페이지가 새로고침됩니다.");
+      location.reload();
+    }
+  } catch (err) {
+    console.error("reset check failed", err);
   }
 }
-setInterval(checkReset,3000);
+
+setInterval(checkReset, 3000);
 checkReset();
 
+// =========================
+// 초기 경기 목록 렌더
+// =========================
 renderMatchList();
 </script>
 </body>
