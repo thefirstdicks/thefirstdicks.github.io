@@ -135,7 +135,8 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 <script>
 // 설정
 const baseAvg=1.75, alpha=0.75, minOdds=0.6, maxOdds=3.0, k=5;
-let myPoints=1000;
+let myPoints = Number(localStorage.getItem("myBGD")) || 1000;
+document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
 
 let playersData={
   "Match 1":[{name:"A",scores:[],avg:0},{name:"B",scores:[],avg:0},{name:"C",scores:[],avg:0},{name:"D",scores:[],avg:0}],
@@ -275,6 +276,7 @@ async function placeBetGlobal(){
   const data = await res.json();
 
   myPoints -= amt;
+  localStorage.setItem("myBGD", myPoints);
   document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
 
   alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!\n(전체 누적: ${data.total})`);
@@ -292,4 +294,3 @@ renderMatchList();
 
 
 </html>
-
