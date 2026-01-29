@@ -287,10 +287,33 @@ async function placeBetGlobal(){
   checkedPlayer=null;
 }
 
-// 초기 경기 목록 렌더
+// 관리자 초기화 감지
+async function checkReset(){
+  try {
+    const res = await fetch(
+      "https://patient-darkness-ff6b.the1stdicks.workers.dev/reset-status"
+    );
+    if(!res.ok) return;
+    const data = await res.json();
+
+    const lastReset = Number(data.resetTs || 0);
+    const myReset = Number(localStorage.getItem("myResetTs") || 0);
+
+    if(lastReset > myReset){
+      localStorage.setItem("myBGD", 1000);
+      localStorage.setItem("myResetTs", lastReset);
+      myPoints = 1000;
+      document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+      alert("관리자에 의해 BGD가 초기화되었습니다.");
+    }
+  } catch(e){
+    console.error("Reset 확인 실패", e);
+  }
+}
+
+// 페이지 로드 시 초기화
 renderMatchList();
+checkReset();
 </script>
 </body>
-
-
 </html>
