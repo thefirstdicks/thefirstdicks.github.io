@@ -248,14 +248,37 @@ function toggleCheck(e,name){
 }
 
 // 공용 베팅 적용
-function placeBetGlobal(){
-  const amt=Number(document.getElementById("betAmountGlobal").value);
-  if(!amt || amt<=0){alert("금액 입력 필요"); return;}
-  if(!checkedPlayer){alert("플레이어를 선택해주세요"); return;}
-  if(amt>myPoints){alert("BGD 부족"); return;}
+async function placeBetGlobal(){
+  const amt = Number(document.getElementById("betAmountGlobal").value);
+  if(!amt || amt<=0){ alert("금액 입력 필요"); return; }
+  if(!checkedPlayer){ alert("플레이어를 선택해주세요"); return; }
+  if(amt>myPoints){ alert("BGD 부족"); return; }
+
+  const res = await fetch(
+    "https://patient-darkness-ff6b.the1stdicks.workers.dev/bet",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        matchId: selectedMatch,
+        player: checkedPlayer,
+        amount: amt
+      })
+    }
+  );
+
+  if(!res.ok){
+    alert("서버 오류");
+    return;
+  }
+
+  const data = await res.json();
+
   myPoints -= amt;
   document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
-  alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!`);
+
+  alert(`${checkedPlayer}에게 ${amt} BGD 베팅 완료!\n(전체 누적: ${data.total})`);
+
   document.getElementById("betAmountGlobal").value="";
   document.querySelectorAll(".checkCircle").forEach(el=>el.classList.remove("checked"));
   document.querySelectorAll(".player").forEach(card=>card.classList.remove("checked"));
@@ -269,3 +292,4 @@ renderMatchList();
 
 
 </html>
+
