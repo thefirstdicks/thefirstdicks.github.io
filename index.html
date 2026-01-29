@@ -353,7 +353,8 @@ async function checkReset() {
     const serverTs = data.resetTs || "0";
     const localTs = localStorage.getItem("lastReset") || "0";
     if (serverTs !== localTs){
-      alert("관리자가 시스템을 초기화했습니다.\n페이지가 새로고침됩니다.");
+      localStorage.setItem("lastReset", serverTs); // 반드시 서버 타임스탬프 기록
+      // alert("관리자가 시스템을 초기화했습니다.\n페이지가 새로고침됩니다."); // 삭제 또는 선택적으로 유지
       location.reload();
     }
   } catch (err) { console.error("reset check failed", err); }
@@ -390,6 +391,7 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
 
 
 
