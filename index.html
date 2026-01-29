@@ -314,29 +314,31 @@ document.getElementById("adminBtn").onclick = async () => {
 };
 
 // =========================
-// 관리자 초기화 감지 (다른 클라이언트용)
+// 🔥 관리자 전체 초기화 감지 (완전 리셋)
 // =========================
-let lastReset = localStorage.getItem("lastReset") || "0";
-
 async function checkReset() {
   try {
     const res = await fetch("https://patient-darkness-ff6b.the1stdicks.workers.dev/reset-status");
     if (!res.ok) return;
+
     const data = await res.json();
+    const serverTs = data.resetTs || "0";
+    const localTs = localStorage.getItem("lastReset") || "0";
 
-    if (data.resetTs && data.resetTs !== lastReset) {
-      myPoints = 1000;
-      localStorage.setItem("myBGD", myPoints);
-      document.getElementById("pointDisplay").innerText = `BGD: ${myPoints}`;
+    if (serverTs !== localTs) {
+      // 🔥 완전 초기화
+      localStorage.clear();
+      localStorage.setItem("lastReset", serverTs);
 
-      localStorage.setItem("lastReset", data.resetTs);
-      lastReset = data.resetTs;
-
-      alert("관리자가 모든 BGD를 초기화했습니다!");
+      alert("관리자가 시스템을 초기화했습니다.\n페이지가 새로고침됩니다.");
+      location.reload();
     }
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error("reset check failed", err);
+  }
 }
-setInterval(checkReset, 5000);
+
+setInterval(checkReset, 3000);
 checkReset();
 
 // =========================
@@ -346,4 +348,3 @@ renderMatchList();
 </script>
 </body>
 </html>
-
