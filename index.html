@@ -315,7 +315,7 @@ document.getElementById("adminBtn").onclick = async () => {
     return;
   }
 
-  const mode = prompt("1: 베팅 조회\n2: 전체 초기화");
+  const mode = prompt("1: 베팅 조회\n2: 전체 초기화\n3: 경기 결과 입력");
   if (!mode) return;
 
   if (mode === "1") {
@@ -418,4 +418,5 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
 
