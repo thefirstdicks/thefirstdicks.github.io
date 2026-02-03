@@ -128,7 +128,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 
 <header>
   <div class="logo" onclick="goHome()">🎲 보겜동</div>
-  <div class="points" id="pointDisplay">BGD: 1000</div>
+  <div class="points" id="pointDisplay">BGD: -</div>
 </header>
 
 <button id="adminBtn">관리자</button>
@@ -143,7 +143,7 @@ header .points{font-size:16px;font-weight:600;color:#f0b90b;}
 
   <!-- 베팅 영역 -->
   <div id="betAreaGlobal">
-    <input type="number" id="betAmountGlobal" placeholder="베팅 BGD">
+    <input type="number" id="betAmountGlobal" placeholder="베팅 금액">
     <button onclick="placeBetGlobal()">베팅 확정</button>
   </div>
 </div>
@@ -340,6 +340,33 @@ document.getElementById("adminBtn").onclick = async () => {
     if (res.ok && data.ok) alert("전체 초기화 완료");
     else alert("초기화 실패");
   }
+
+  if (mode === "3") {
+    const matchId = prompt("Match ID (예: Match 1)");
+    if (!matchId) return;
+  
+    const winner = prompt("승자 이름 (예: A)");
+    if (!winner) return;
+  
+    const res = await fetch(`${API}/admin/result`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin-Key": key
+      },
+      body: JSON.stringify({ matchId, winner })
+    });
+  
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "정산 실패");
+      return;
+    }
+  
+    alert(
+      `정산 완료!\n승자: ${winner}\n총 베팅: ${data.totalPool} BGD`
+    );
+  }
 };
 
 // =========================
@@ -391,3 +418,4 @@ initSession().then(renderMatchList);
 </script>
 </body>
 </html>
+
